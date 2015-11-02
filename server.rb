@@ -1,30 +1,46 @@
-require 'socket'
-require 'thread'
+#!/usr/bin/env ruby -w
+require "socket"
 
-PORT = 8421
-socket = TCPServer.new('127.0.0.1', PORT)
+class Server
+  def initialize( port, ip )
+    @server = TCPServer.open( ip, port )
+    @connections = Hash.new
+    @rooms = Hash.new
+    @clients = Hash.new
+    @connections[:server] = @server
+    @connections[:rooms] = @rooms
+    @connections[:clients] = @clients
+    run
+  end
 
+  def run
+    loop {
+      Thread.start(@server.accept) do | client |
+        nick_name = client.gets.chomp.to_sym
+        @connections[:clients].each do |other_name, other_client|
+          if nick_name == other_name || client == other_client
+            client.puts "This username already exist"
+            Thread.kill self
+          end
+        end
+        puts "#{nick_name} #{client}"
+        @connections[:clients][nick_name] = client
+        client.puts "Connection established, Thank you for joining! Happy chatting"
+        listen_user_messages( nick_name, client )
+      end
+    }.join
+  end
 
-def handle_connection(client)
-   puts "Client #{client} has connected"
-
+  def listen_user_messages( username, client )
+    loop {
+      msg = client.gets.chomp
+      @connections[:clients].each do |other_name, other_client|
+        unless other_name == username
+          other_client.puts "#{username.to_s}: #{msg}"
+        end
+      end
+    }
+  end
 end
 
-puts "[#{Time.now}]: Listening on #{PORT}."
-
-while client = socket.accept
-	Thread.new { handle_connection(client) }
-		client.puts "---Connection Established---"
-		client.puts "-----------Login-----------"
-		client.puts "Enter command.\n1. Alias\n2. Anonymous Alias\n3. Create Account"
-		command = client.gets.chomp
-		if command = "1"
-			client.puts "Please enter an Alias"
-			Alias = client.gets.chomp
-		elseif command = "2"
-			Alias = "anon"
-		elseif command = "3"
-			client.puts "Feature not available yet"
-		else client.puts "Command not valid please enter another command"
-		end
-end
+Server.new( 8421, "localhost" )
