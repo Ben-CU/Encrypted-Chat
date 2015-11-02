@@ -31,5 +31,5 @@ class Client
   end
 end
 
-server = TCPSocket.open( "localhost", 8421 )
+server = TCPSocket.open( "10.1.200.19", 8421 )
 Client.new( server )
