@@ -24,7 +24,7 @@ class Server
         end
         puts "#{nick_name} #{client}"
         @connections[:clients][nick_name] = client
-        client.puts "Connection established, Thank you for joining! Happy chatting"
+        client.puts "Connection established"
         listen_user_messages( nick_name, client )
       end
     }.join
