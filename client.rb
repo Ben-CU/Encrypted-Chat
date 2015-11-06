@@ -1,4 +1,6 @@
 require "socket"
+require "gibberish"
+
 class Client
   def initialize( server )
     @server = server
@@ -11,19 +13,23 @@ class Client
   end
 
   def listen
+    cipher = Gibberish::AES.new('Password')
     @response = Thread.new do
       loop {
         msg = @server.gets.chomp
-        puts "#{msg}"
+        plainmsg = cipher.decrypt(msg)
+        puts "#{plainmsg}"
       }
     end
   end
 
   def send
+    cipher = Gibberish::AES.new('Password')
     puts "Enter an Alias:"
     @request = Thread.new do
       loop {
-        msg = $stdin.gets.chomp
+        plainmsg = $stdin.gets.chomp
+        msg = cipher.encrypt(plainmsg)
         @server.puts( msg )
       }
     end
