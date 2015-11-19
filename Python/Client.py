@@ -2,39 +2,42 @@ import select
 import socket
 import string
 import sys
- 
-def prompt() :
-    sys.stdout.write('<You> ')
+
+
+def prompt():
+    sys.stdout.write("You - ")
     sys.stdout.flush()
- 
-def Main():
-    Host = "192.168.133.129"
-    Port = 8421
+
+
+def main():
+    host = "192.168.133.129"
+    port = 8421
      
-    ServerSocket = socket.socket()
-    ServerSocket.settimeout(2)
-    ServerSocket.connect((Host, Port))
+    server_socket = socket.socket()
+    server_socket.settimeout(2)
+    server_socket.connect((host, port))
      
-    print 'Connected to remote host. You can now send messages'
+    print("Connected to remote host. You can now send messages")
     prompt()
      
     while True:
-        socket_list = [sys.stdin, ServerSocket]
-        read_sockets, write_sockets, error_sockets = select.select(socket_list , [], [])
-         
-        for sock in read_sockets:
-            if sock == ServerSocket:
-                data = sock.recv(4096)
-                if not data :
-                    print '\nDisconnected from chat server'
+        socket_list = [sys.stdin, server_socket]
+        read_sockets, write_sockets, error_sockets = select.select(socket_list, [], [])
+
+        for current_socket in read_sockets:
+            if current_socket == server_socket:
+                data = current_socket.recv(4096)
+                if not data:
+                    print("Disconnected from chat server")
+                    server_socket.close()
                     sys.exit()
-                else :
+                else:
                     sys.stdout.write(data)
                     prompt()
-            else :
+            else:
                 msg = sys.stdin.readline()
-                ServerSocket.send(msg)
+                server_socket.send(msg)
                 prompt()
 
 if __name__ == "__main__":
-    Main()
+    main()
