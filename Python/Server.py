@@ -28,7 +28,9 @@ def client_handler():
                 new_message = current_socket.recv(4096)
                 if new_message:
                     sys.stdout.write(str(current_socket) + " " + new_message)
-                    send_message(current_socket, new_message)
+                    send_message_thread = threading.Thread(target=send_message, args=(current_socket, new_message, ))
+                    send_message_thread.daemon = True
+                    send_message_thread.start()
 
 
 def get_host_ip():
@@ -40,9 +42,10 @@ def get_host_ip():
     user_input = sys.stdin.readline()
     if (user_input[0] == "y") or (user_input[0] == "Y"):
         # runs the command ifconfig and takes the
-        import os
-        local_ip = os.popen('ifconfig eth0 | grep "inet\ addr" | cut -d: -f2 | cut -d" " -f1')
-        return local_ip.read()
+        sys.stdout.write("Please enter the local ip: ")
+        ip = sys.stdin.readline()
+        ip = str(ip)[0:-1]
+        return ip
     elif (user_input[0] == "n") or (user_input[0] == "N"):
         import urllib
         ip = urllib.urlopen('http://simplesniff.com/ip').read()
@@ -75,6 +78,10 @@ def read_server_commands():
         server_command = str(server_command)[0:-1]
 
 
+def server_restart():
+    print()
+
+
 def server_shutdown():
     """
     Shuts down the server by closing all the client sockets then the server socket
@@ -88,6 +95,7 @@ def server_shutdown():
             current_socket.close()
     print("Disconnecting server")
     # closes the servers socket then exits the program
+    print("Server has shutdown")
     server_socket.close()
     sys.exit()
 
@@ -98,7 +106,7 @@ def main():
     runs on.
     """
     # defines the ip and port for the server to run on
-    host_ip = "192.168.133.129"
+    host_ip = get_host_ip() #"10.1.172.67"
     port = 8421
 
     # creates the servers socket and sets it to listen
@@ -107,7 +115,7 @@ def main():
     connection_list.append(server_socket)
 
     print("The server has been started on")
-    sys.stdout.write("Host: " + host_ip)
+    print("Host: " + host_ip)
     print("Port: " + str(port))
 
     # creates and starts the thread to handle input to the server
