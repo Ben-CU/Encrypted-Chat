@@ -21,8 +21,7 @@ def Main_GUI():
     text1.pack(side= LEFT, fill =BOTH)
     scr.config(command=text1.yview)
     scr.pack(side=LEFT, fill=Y)
-    
-    
+
     seperator= Frame(root)
     seperator.pack(side=LEFT)
     ip =Label(seperator, text='IP')
@@ -51,6 +50,7 @@ def send():
     except:
         print_("Problem while sending text...")
 
+
 def print_(data):
     global line11
     if len(data) > 0:
@@ -61,26 +61,64 @@ def print_(data):
     text1.mark_set(INSERT, line11)
     text1.config(state=DISABLED)
 
+
+
+def AsciiArt (inputstring):
+    """takes user input and converts allows user to paste ascii emojies quickly using special
+    comands"""
+    import os
+    files = [f for f in os.listdir("AsciiArt/") if f.endswith('.txt')]
+    names2 = list()
+    for file in files:
+        h = "!"+file
+        names2.append (h.replace(".txt", ""))
+    if inputstring == "!help":
+        names = list()
+        for file in files:
+            names.append (file.replace("AsciiArt/", "").replace(".txt", ""))
+        print_("Valid Picture Commands are:")
+        for file in names:
+            print_(file)
+    elif inputstring in names2:
+        file = inputstring.replace("!", "")
+        filepath = "AsciiArt/" + file + ".txt"
+        output = open(filepath, 'r').read()
+        server_socket.send(output)
+    else:
+        print_("This is not a valid command! Try '!help'")
+
+
 def main():
     Server_Running_thread =threading.Thread(target=Server)
     Server_Running_thread.start()
 
+
+def create_alias(server_socket):
+    requested_alias = ""
+    while True:
+        if not requested_alias:
+            requested_alias = "its not broke"
+            server_socket.send(requested_alias)
+        else:
+            server_decision = server_socket.recv(4096)
+            if server_decision == "Accepted":
+                return
+            elif server_decision == "Rejected":
+                requested_alias = ""
+
     
-
-
-
 def Server():
     global server_socket
     host = ip_entr.get()
     port = int(port_entr.get())
-     
+
     server_socket = socket.socket()
     server_socket.settimeout(2)
     server_socket.connect((host, port))
-    #here
-    print_("Connected to remote host. You can now send messages")
-    
-     
+    print_("Connected to remote host.")
+    create_alias(server_socket)
+    print_("You can now send messages.")
+
     while True:
         socket_list = [sys.stdin, server_socket]
         read_sockets, write_sockets, error_sockets = select.select(socket_list, [], [])
@@ -94,10 +132,10 @@ def Server():
                     sys.exit()
                 else:
                     print_(data)
-                    
+
             else:
                 server_socket.send(stext)
-     
+
 line11=1
 if __name__ == "__main__":
     Main_GUI()
