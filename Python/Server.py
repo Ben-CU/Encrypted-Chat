@@ -78,9 +78,13 @@ def send_message(sending_socket, message):
     :param sending_socket: the socket that the client with the message sent from
     :param message: the message from on client to all of the others
     """
+    messagetoall = AliasDict.get(sending_socket) + ": " + message
+    messagetosender = "You: " + message
     for current_socket in connection_list:
         if (current_socket != server_socket) and (current_socket != sending_socket):
-            current_socket.send(message)
+            current_socket.send(messagetoall)
+        elif current_socket == sending_socket:
+            current_socket.send(messagetosender)
     return
 
 
