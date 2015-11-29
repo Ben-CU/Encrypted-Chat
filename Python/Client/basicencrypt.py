@@ -10,9 +10,7 @@ def encrypt(message_to_encrypt):
     length = len(alphabet)
     message_to_encrypt = message_to_encrypt.replace(' ', '|')
     key = str(datetime.date.today())
-    key_length = len(key)
     messagelength = len(message_to_encrypt)
-    overlap = messagelength % key_length
     encrypted_message = []
     count = 0
     keylist = []

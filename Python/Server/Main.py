@@ -12,6 +12,10 @@ alias_dict = {}
 
 
 def client_listening(server_socket):
+    """
+    Reads incoming data from clients, if it is a new client the connection socket is added
+    to the connection list otherwise the data is sent to all the other clients as a message
+    """
     while True:
         read_sockets, write_sockets, error_sockets = select.select(connection_list, [], [])
         for current_socket in read_sockets:
@@ -36,6 +40,10 @@ def client_listening(server_socket):
 
 
 def get_host_ip():
+    """
+    Gets the IP for the server and if the server is to be running on a LAN or not
+    if the sever is not running on a LAN then the ip is produced automatically
+    """
     sys.stdout.write("Is this a LAN server? ( y/n ) ")
     user_input = sys.stdin.readline()
     if (user_input[0] == "y") or (user_input[0] == "Y"):

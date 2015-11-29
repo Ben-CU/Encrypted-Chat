@@ -10,6 +10,10 @@ import basicencrypt
 
 
 def AsciiArt(inputstring):
+    """
+    takes user input and converts allows user to paste ascii emojies quickly using special
+    comands
+    """
     files = [f for f in os.listdir("AsciiArt/") if f.endswith('.txt')]
     names2 = list()
     for file in files:
@@ -32,6 +36,10 @@ def AsciiArt(inputstring):
 
 
 def create_alias(server_socket):
+    """
+    Sends a request to the sever asking if the requested alias has been taken
+    if not it is assigned and this ends otherwise will loop till new alias is taken
+    """
     requested_alias = ""
     while True:
         if not requested_alias:
@@ -47,6 +55,10 @@ def create_alias(server_socket):
 
 
 def sel():
+    """
+    whenever one of the radio buttons is pressed the global variable controlling
+    the type of encryption used is assigned
+    """
     global encryption_selected
     if var.get() == 0:
         encryption_selected = ""
@@ -57,6 +69,9 @@ def sel():
 
 
 def Main_GUI():
+    """
+    Creates the GUI for the client
+    """
     global entr, text1, root, ip_entr, port_entr, Alias_entr, var
     root = Tk()
     root.title('Chat Client')
@@ -65,8 +80,8 @@ def Main_GUI():
     entr.pack(side=BOTTOM, fill=X)
     entr.focus()
     entr.bind('<Return>', (lambda event: send()))
-    text1 =Text(root, relief = SUNKEN)
-    scr =Scrollbar(root)
+    text1 = Text(root, relief = SUNKEN)
+    scr = Scrollbar(root)
     text1.config(state=DISABLED, yscrollcommand=scr.set)
     text1.pack(side= LEFT, fill =BOTH)
     scr.config(command=text1.yview)
@@ -105,12 +120,22 @@ def Main_GUI():
 
 
 def main():
+    """
+    assigns the default value for the type of encryption used for messages
+    starts the thread that runs the clients connection to the server
+    """
+    global encryption_selected
+    encryption_selected = ""
     server_running_thread = threading.Thread(target=server)
     server_running_thread.daemon = True
     server_running_thread.start()
 
 
 def print_(data, incoming_message):
+    """
+    will read if there is and incoming message check for its encryption type
+    if its a message it is then decrypted if it needs it and is output to the text box
+    """
     global line11
     if (len(data) > 0) and (incoming_message == False):
         data = data + '\n'
@@ -125,13 +150,28 @@ def print_(data, incoming_message):
             if data[-10:] == "rbUb7qe14x":
                 data = data[:count] + basicencrypt.decrypt(data[count:-10]) + '\n'
             elif data[-1:] == "]":
+                extracted_data = data[count:]
+                extracted_data = extracted_data.split(',')
+                ori_length = int(extracted_data[0])
+                data_list = []
+                for i in range(1, len(extracted_data)):
+                    if i != len(extracted_data):
+                        temp = extracted_data[1]
+                        temp = temp[1:]
+                        data_list.append(int(temp))
+                    else:
+                        temp = extracted_data[i]
+                        temp = temp[1:-1]
+                        data_list.append(int(temp))
                 decrypt = aes.AESModeOfOperation()
                 mode = decrypt.modeOfOperation["OFB"]
-                decrypted = decrypt.decrypt(datalist,ori_length,mode,
+                decrypted = decrypt.decrypt(data_list,ori_length,mode,
                            [143,194,34,208,145,203,230,143,177,246,97,206,145,92,255,84],
                            decrypt.aes.keySize["SIZE_128"],
                            [103,35,148,239,76,213,47,118,255,222,123,176,106,134,98,92])
-                print_(decrypted, False)
+                data = data[:count] + decrypted + '\n'
+            else:
+                data = data + '\n'
     line11 += 1.0
     text1.config(state=NORMAL)
     text1.insert(line11, data)
@@ -140,6 +180,9 @@ def print_(data, incoming_message):
 
 
 def send():
+    """
+    will take a message and encypt it based on the setting chosen in encryption_selected
+    """
     global stext
     global encryption_selected
     stext = entr.get()
@@ -155,12 +198,17 @@ def send():
                                          encrypt.aes.keySize["SIZE_128"],
                                          [103,35,148,239,76,213,47,118,255,222,123,176,106,134,98,92])
         ciphertext = str(ciphertext)
+        ciphertext = str(orig_len) + "," + ciphertext
         server_socket.send(ciphertext)
     else:
         server_socket.send(stext)
 
 
 def server():
+    """
+    creates and maintains the connection to the server as well as handling what should
+    happen with any new messages that the client recieves from the server
+    """
     global server_socket
     host = ip_entr.get()
     port = int(port_entr.get())
