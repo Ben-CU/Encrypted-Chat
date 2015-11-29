@@ -1,3 +1,5 @@
+# Source http://stackoverflow.com/questions/20014860/vigenere-cipher-error-when-trying-to-encrypt-decrypt
+
 import datetime
 import sys
 

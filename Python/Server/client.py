@@ -30,6 +30,7 @@ def send_message(sending_socket, message, connection_list, alias_dict, server_so
                 print("Client with alias: " + alias_dict.get(current_socket) + " has disconnected, alias now available")
                 del alias_dict[current_socket]
                 connection_list.remove(current_socket)
+                continue
         elif current_socket == sending_socket:
             current_socket.send(message_for_sender)
     return

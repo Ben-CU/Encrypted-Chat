@@ -7,6 +7,7 @@
 #
 # Licensed under the MIT License ( http://www.opensource.org/licenses/mit-license.php ):
 #
+# Source: http://uthcode.googlecode.com/svn-history/r678/trunk/python/py3AES.py
 import math
 
 class AES:

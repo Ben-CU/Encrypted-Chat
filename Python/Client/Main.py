@@ -1,5 +1,6 @@
 from Tkinter import *
 
+import datetime
 import os
 import socket
 import select
@@ -138,46 +139,64 @@ def print_(data, incoming_message):
     """
     global line11
     if (len(data) > 0) and (incoming_message == False):
+        # if it is not a message that needs to be output to the text box
         data = data + '\n'
-    if incoming_message:
-            count = 0
-            for char in data:
-                if char == ' ':
-                    count += 1
-                    break
-                else:
-                    count += 1
-            if data[-10:] == "rbUb7qe14x":
-                data = data[:count] + basicencrypt.decrypt(data[count:-10]) + '\n'
-            elif data[-1:] == "]":
-                extracted_data = data[count:]
-                extracted_data = extracted_data.split(',')
-                ori_length = int(extracted_data[0])
-                data_list = []
-                for i in range(1, len(extracted_data)):
-                    if i != len(extracted_data):
-                        temp = extracted_data[1]
-                        temp = temp[1:]
-                        data_list.append(int(temp))
-                    else:
-                        temp = extracted_data[i]
-                        temp = temp[1:-1]
-                        data_list.append(int(temp))
-                decrypt = aes.AESModeOfOperation()
-                mode = decrypt.modeOfOperation["OFB"]
-                decrypted = decrypt.decrypt(data_list,ori_length,mode,
-                           [143,194,34,208,145,203,230,143,177,246,97,206,145,92,255,84],
-                           decrypt.aes.keySize["SIZE_128"],
-                           [103,35,148,239,76,213,47,118,255,222,123,176,106,134,98,92])
-                data = data[:count] + decrypted + '\n'
+    elif incoming_message:
+        # the size alias part of the string is found
+        count = 0
+        for char in data:
+            if char == ' ':
+                count += 1
+                break
             else:
-                data = data + '\n'
+                count += 1
+        if data[-10:] == "rbUb7qe14x":
+            # if the identifier above is found on the end of the message then
+            # data has the alias put in front with the main message decrypted using basicencrypt module
+            data = data[:count] + basicencrypt.decrypt(data[count:-10]) + '\n'
+        elif data[-1:] == "]":
+            # if a ']' is at the end of the message then the message has the
+            # alias and original length parts taken off the front and is then converted to an
+            # integer list to be decrypted
+            extracted_data = data[count:]
+            extracted_data = extracted_data.split(',')
+            ori_length = int(extracted_data[0])
+            data_list = []
+            for i in range(1, len(extracted_data)):
+                if i != len(extracted_data):
+                    temp = extracted_data[1]
+                    temp = temp[1:]
+                    data_list.append(int(temp))
+                else:
+                    temp = extracted_data[i]
+                    temp = temp[1:-1]
+                    data_list.append(int(temp))
+            decrypt = aes.AESModeOfOperation()
+            key = get_aes_key()
+            mode = decrypt.modeOfOperation["OFB"]
+            decrypted = decrypt.decrypt(data_list,ori_length,mode, key,
+                       decrypt.aes.keySize["SIZE_128"],
+                       [103,35,148,239,76,213,47,118,255,222,123,176,106,134,98,92])
+            # the decrypted message is then output to a string with the alias at the front
+            data = data[:count] + decrypted + '\n'
+        else:
+            data = data + '\n'
+    # writes data to the text box
     line11 += 1.0
     text1.config(state=NORMAL)
     text1.insert(line11, data)
     text1.mark_set(INSERT, line11)
     text1.config(state=DISABLED)
 
+
+def get_aes_key():
+    current_datetime = str(datetime.datetime.now())
+    key = []
+    for char in current_datetime:
+        key.append(ord(char))
+        if len(key) == 16:
+            break
+    return key
 
 def send():
     """
@@ -188,19 +207,25 @@ def send():
     stext = entr.get()
     entr.delete(0, END)
     if encryption_selected == "basic":
+        # Takes the message to be sent and encrypts it using the basicencrypt module
         stext = basicencrypt.encrypt(stext)
+        # Adds identifier onto the end of the message
         stext += "rbUb7qe14x"
         server_socket.send(stext)
     elif encryption_selected == "aes":
+        # Takes the message to be sent and encrypts it using the aes module
         encrypt = aes.AESModeOfOperation()
-        mode, orig_len, ciphertext = encrypt.encrypt(stext, encrypt.modeOfOperation["OFB"],
-                                         [143,194,34,208,145,203,230,143,177,246,97,206,145,92,255,84],
+        key = get_aes_key()
+        mode, orig_len, ciphertext = encrypt.encrypt(stext, encrypt.modeOfOperation["OFB"], key,
                                          encrypt.aes.keySize["SIZE_128"],
                                          [103,35,148,239,76,213,47,118,255,222,123,176,106,134,98,92])
+        # converts the integer list that is output to a string
         ciphertext = str(ciphertext)
+        # the original message length is then appended to the front of the message
         ciphertext = str(orig_len) + "," + ciphertext
         server_socket.send(ciphertext)
     else:
+        # if there is no encryption the message is just sent
         server_socket.send(stext)
 
 
@@ -210,12 +235,14 @@ def server():
     happen with any new messages that the client recieves from the server
     """
     global server_socket
+    # Gets the ip and port from the input boxes
     host = ip_entr.get()
     port = int(port_entr.get())
+    # creates the socket to connect to the server on and the connects
     server_socket = socket.socket()
     server_socket.settimeout(2)
     server_socket.connect((host, port))
-    print_("Connected to remote host.", False)
+    print_(("Connected to remote host." + str(datetime.date.today())), False)
     create_alias(server_socket)
     print_("You can now send messages.", False)
     while True:
@@ -223,6 +250,7 @@ def server():
         read_sockets, write_sockets, error_sockets = select.select(socket_list, [], [])
         for current_socket in read_sockets:
             if current_socket == server_socket:
+                # incoming message
                 data = current_socket.recv(4096)
                 if not data:
                     print_("Disconnected from chat server", False)
@@ -231,6 +259,7 @@ def server():
                 else:
                     print_(data, True)
             else:
+                #message to be sent from client
                 server_socket.send(stext)
 
 
