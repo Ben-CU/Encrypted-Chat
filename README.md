@@ -1,8 +1,7 @@
 # Encrypted-Chat
-Encrypted chat program written in ruby
 
-to use install ruby
+A Client/Server Encrypted chat program written in Python.
+The application has a couple of encryption methods and can use a simple vigenere cypher or AES encryption.
+Also has the ability to send Ascii images.
 
-then run 'ruby server.rb' from terminal
-
-to connect run 'telnet localhost 8421'
+The ruby folder contains the older ruby implementation which was later redone in Python.
